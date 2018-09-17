@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace milk\pureentities\inventory;
 
-use milk\pureentities\entity\mob\Monster;
+use milk\pureentities\entity\monster\Monster;
 use pocketmine\inventory\BaseInventory;
 use pocketmine\item\Item;
 use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
