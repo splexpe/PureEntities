@@ -14,8 +14,8 @@ class CaveSpider extends WalkingMonster{
     public $width = 0.9;
     public $height = 0.8;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 1.3;
         $this->setMaxHealth(12);

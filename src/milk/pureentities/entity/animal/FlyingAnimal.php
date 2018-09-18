@@ -8,8 +8,8 @@ use pocketmine\Player;
 
 abstract class FlyingAnimal extends FlyingEntity implements Animal{
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 0.7;
     }

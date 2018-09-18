@@ -66,11 +66,11 @@ abstract class WalkingEntity extends EntityBase{
     }
 
     protected function checkJump($tickDiff, $dx, $dz){
-        if($this->motionY == $this->gravity * 2){
+        if($this->motion->y == $this->gravity * 2){
             return $this->level->getBlock(new Vector3(Math::floorFloat($this->x), (int) ($this->y + 0.3), Math::floorFloat($this->z))) instanceof Liquid;
         }else{
             if($this->level->getBlock(new Vector3(Math::floorFloat($this->x), (int) ($this->y + 0.9), Math::floorFloat($this->z))) instanceof Liquid){
-                $this->motionY = $this->gravity * 2 * $tickDiff;
+                $this->motion->y = $this->gravity * 2 * $tickDiff;
                 return \true;
             }
         }
@@ -88,10 +88,10 @@ abstract class WalkingEntity extends EntityBase{
             && $block->getSide(Block::SIDE_UP)->getBoundingBox() === \null
             && $block->getSide(Block::SIDE_UP, 2)->getBoundingBox() === \null
         ){
-            if($this->motionY < $this->gravity * 4 * $tickDiff){
-                $this->motionY = $this->gravity * 4 * $tickDiff;
+            if($this->motion->y < $this->gravity * 4 * $tickDiff){
+                $this->motion->y = $this->gravity * 4 * $tickDiff;
             }else{
-                $this->motionY += $this->gravity * $tickDiff;
+                $this->motion->y += $this->gravity * $tickDiff;
             }
             return \true;
         }
@@ -104,8 +104,8 @@ abstract class WalkingEntity extends EntityBase{
         }
 
         if($this->attackTime > 0){
-            $this->move($this->motionX * $tickDiff, $this->motionY, $this->motionZ * $tickDiff);
-            $this->motionY -= 0.2 * $tickDiff;
+            $this->move($this->motion->x * $tickDiff, $this->motion->y, $this->motion->z * $tickDiff);
+            $this->motion->y -= 0.2 * $tickDiff;
             $this->updateMovement();
             return null;
         }
@@ -117,11 +117,11 @@ abstract class WalkingEntity extends EntityBase{
 
             $diff = \abs($x) + \abs($z);
             if($x ** 2 + $z ** 2 < 0.7){
-                $this->motionX = 0;
-                $this->motionZ = 0;
+                $this->motion->x = 0;
+                $this->motion->z = 0;
             }else{
-                $this->motionX = $this->getSpeed() * 0.15 * ($x / $diff);
-                $this->motionZ = $this->getSpeed() * 0.15 * ($z / $diff);
+                $this->motion->x = $this->getSpeed() * 0.15 * ($x / $diff);
+                $this->motion->z = $this->getSpeed() * 0.15 * ($z / $diff);
             }
             $this->yaw = \rad2deg(-\atan2($x / $diff, $z / $diff));
             $this->pitch = $y === 0 ? 0 : \rad2deg(-\atan2($y, \sqrt($x ** 2 + $z ** 2)));
@@ -136,25 +136,25 @@ abstract class WalkingEntity extends EntityBase{
 
             $diff = \abs($x) + \abs($z);
             if($x ** 2 + $z ** 2 < 0.7){
-                $this->motionX = 0;
-                $this->motionZ = 0;
+                $this->motion->x = 0;
+                $this->motion->z = 0;
             }else{
-                $this->motionX = $this->getSpeed() * 0.15 * ($x / $diff);
-                $this->motionZ = $this->getSpeed() * 0.15 * ($z / $diff);
+                $this->motion->x = $this->getSpeed() * 0.15 * ($x / $diff);
+                $this->motion->z = $this->getSpeed() * 0.15 * ($z / $diff);
             }
             $this->yaw = \rad2deg(-\atan2($x / $diff, $z / $diff));
             $this->pitch = $y === 0 ? 0 : \rad2deg(-\atan2($y, \sqrt($x ** 2 + $z ** 2)));
         }
 
-        $dx = $this->motionX * $tickDiff;
-        $dz = $this->motionZ * $tickDiff;
+        $dx = $this->motion->x * $tickDiff;
+        $dz = $this->motion->z * $tickDiff;
         $isJump = $this->checkJump($tickDiff, $dx, $dz);
         if($this->stayTime > 0){
             $this->stayTime -= $tickDiff;
-            $this->move(0, $this->motionY * $tickDiff, 0);
+            $this->move(0, $this->motion->y * $tickDiff, 0);
         }else{
             $be = new Vector2($this->x + $dx, $this->z + $dz);
-            $this->move($dx, $this->motionY * $tickDiff, $dz);
+            $this->move($dx, $this->motion->y * $tickDiff, $dz);
             $af = new Vector2($this->x, $this->z);
 
             if(($be->x !== $af->x || $be->y !== $af->y) && !$isJump){
@@ -164,13 +164,13 @@ abstract class WalkingEntity extends EntityBase{
 
         if(!$isJump){
             if($this->onGround){
-                $this->motionY = 0;
-            }elseif($this->motionY > -$this->gravity * 4){
+                $this->motion->y = 0;
+            }elseif($this->motion->y > -$this->gravity * 4){
                 if(!($this->level->getBlock(new Vector3(Math::floorFloat($this->x), (int) ($this->y + 0.9), Math::floorFloat($this->z))) instanceof Liquid)){
-                    $this->motionY -= $this->gravity * $tickDiff;
+                    $this->motion->y -= $this->gravity * $tickDiff;
                 }
             }else{
-                $this->motionY -= $this->gravity * $tickDiff;
+                $this->motion->y -= $this->gravity * $tickDiff;
             }
         }
         $this->updateMovement();

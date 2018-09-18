@@ -13,8 +13,8 @@ class MagmaCube extends JumpingMonster{
     public $width = 1.2;
     public $height = 1.2;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 0.8;
         $this->setDamage([0, 3, 4, 6]);

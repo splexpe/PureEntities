@@ -18,9 +18,9 @@ class IronGolem extends WalkingMonster{
     public $height = 2.8;
     public $eyeHeight = 2.5;
 
-    public function initEntity(){
+    public function initEntity(CompoundTag $tag) : void{
         $this->setMaxHealth(100);
-        parent::initEntity();
+        parent::initEntity($tag);
 
         $this->speed = 0.8;
         $this->setFriendly(\true);

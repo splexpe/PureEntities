@@ -19,8 +19,8 @@ class Sheep extends WalkingAnimal{
         return 'Sheep';
     }
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->setMaxHealth(8);
     }

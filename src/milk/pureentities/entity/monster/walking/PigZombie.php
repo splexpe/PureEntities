@@ -23,8 +23,8 @@ class PigZombie extends WalkingMonster{
     public $height = 1.8;
     public $eyeHeight = 1.62;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 1.15;
         if($this->namedtag->hasTag('Angry', IntTag::class)){

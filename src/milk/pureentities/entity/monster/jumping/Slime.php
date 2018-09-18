@@ -19,8 +19,8 @@ class Slime extends JumpingMonster{
         return 'Slime';
     }
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 0.8;
         $this->setMaxHealth(4);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace milk\pureentities\entity;
 
 use milk\pureentities\entity\animal\Animal;
@@ -66,7 +68,7 @@ abstract class FlyingEntity extends EntityBase{
         }
 
         if($this->attackTime > 0){
-            $this->move($this->motionX * $tickDiff, $this->motionY * $tickDiff, $this->motionZ * $tickDiff);
+            $this->move($this->motion->x * $tickDiff, $this->motion->y * $tickDiff, $this->motion->z * $tickDiff);
             $this->updateMovement();
             return \null;
         }
@@ -81,22 +83,22 @@ abstract class FlyingEntity extends EntityBase{
 
             $diff = \abs($x) + \abs($z);
             if($x ** 2 + $z ** 2 < 0.5){
-                $this->motionX = 0;
-                $this->motionZ = 0;
+                $this->motion->x = 0;
+                $this->motion->z = 0;
             }else{
-                $this->motionX = $this->getSpeed() * 0.15 * ($x / $diff);
-                $this->motionZ = $this->getSpeed() * 0.15 * ($z / $diff);
+                $this->motion->x = $this->getSpeed() * 0.15 * ($x / $diff);
+                $this->motion->z = $this->getSpeed() * 0.15 * ($z / $diff);
 
-                $this->motionY = $this->getSpeed() * 0.27 * ($y / $diff);
+                $this->motion->y = $this->getSpeed() * 0.27 * ($y / $diff);
             }
             $this->yaw = \rad2deg(-\atan2($x / $diff, $z / $diff));
             $this->pitch = $y === 0 ? 0 : \rad2deg(-\atan2($y, \sqrt($x ** 2 + $z ** 2)));
         }
 
         $target = $this->target;
-        $dx = $this->motionX * $tickDiff;
-        $dy = $this->motionY * $tickDiff;
-        $dz = $this->motionZ * $tickDiff;
+        $dx = $this->motion->x * $tickDiff;
+        $dy = $this->motion->y * $tickDiff;
+        $dz = $this->motion->z * $tickDiff;
 
         $be = new Vector2($this->x + $dx, $this->z + $dz);
         $this->move($dx, $dy, $dz);
@@ -110,32 +112,8 @@ abstract class FlyingEntity extends EntityBase{
         return \null;
     }
 
-    public function fall(float $fallDistance){
+    public function fall(float $fallDistance) : void{
 
-    }
-
-    public function move(float $dx, float $dy, float $dz) : void{
-        $movX = $dx;
-        $movY = $dy;
-        $movZ = $dz;
-
-        $list = $this->level->getCollisionCubes($this, $this->level->getTickRate() > 1 ? $this->boundingBox->getOffsetBoundingBox($dx, $dy, $dz) : $this->boundingBox->addCoord($dx, $dy, $dz));
-        foreach($list as $bb){
-            if($this->isWallCheck()){
-                $dx = $bb->calculateXOffset($this->boundingBox, $dx);
-                $dz = $bb->calculateZOffset($this->boundingBox, $dz);
-            }
-            $dy = $bb->calculateYOffset($this->boundingBox, $dy);
-        }
-        $this->boundingBox->offset($dx, $dy, $dz);
-
-        $this->x += $dx;
-        $this->y += $dy;
-        $this->z += $dz;
-
-        $this->checkChunks();
-        $this->checkBlockCollision();
-        $this->checkGroundState($movX, $movY, $movZ, $dx, $dy, $dz);
     }
 
 }

@@ -8,6 +8,9 @@ use pocketmine\entity\Entity;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\item\Item;
+use pocketmine\item\ItemFactory;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\network\mcpe\protocol\EntityEventPacket;
 
 class Zombie extends WalkingMonster implements Ageable{
     const NETWORK_ID = 32;
@@ -16,11 +19,11 @@ class Zombie extends WalkingMonster implements Ageable{
     public $height = 1.8;
     public $eyeHeight = 1.62;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
-        $this->speed = 1.1;
-        $this->setDamage([0, 3, 4, 6]);
+        $this->setSpeed(1.1);
+        $this->setDamages([0, 3, 4, 6]);
     }
 
     public function getName() : string{
@@ -31,18 +34,18 @@ class Zombie extends WalkingMonster implements Ageable{
         return $this->getGenericFlag(self::DATA_FLAG_BABY);
     }
 
-    public function setHealth(float $amount){
+    public function setHealth(float $amount) : void{
         parent::setHealth($amount);
 
         if($this->isAlive()){
             if(15 < $this->getHealth()){
-                $this->setDamage([0, 2, 3, 4]);
+                $this->setDamages([0, 2, 3, 4]);
             }else if(10 < $this->getHealth()){
-                $this->setDamage([0, 3, 4, 6]);
+                $this->setDamages([0, 3, 4, 6]);
             }else if(5 < $this->getHealth()){
-                $this->setDamage([0, 3, 5, 7]);
+                $this->setDamages([0, 3, 5, 7]);
             }else{
-                $this->setDamage([0, 4, 6, 9]);
+                $this->setDamages([0, 4, 6, 9]);
             }
         }
     }
@@ -51,7 +54,12 @@ class Zombie extends WalkingMonster implements Ageable{
         if($this->attackDelay > 10 && $this->distanceSquared($player) < 2){
             $this->attackDelay = 0;
 
-            $ev = new EntityDamageByEntityEvent($this, $player, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->getDamage());
+            $pk = new EntityEventPacket();
+            $pk->entityRuntimeId = $this->id;
+            $pk->event = EntityEventPacket::ARM_SWING;
+            $this->server->broadcastPacket($this->hasSpawned, $pk);
+
+            $ev = new EntityDamageByEntityEvent($this, $player, EntityDamageEvent::CAUSE_ENTITY_ATTACK, $this->getResultDamage());
             $player->attack($ev);
         }
     }
@@ -71,20 +79,25 @@ class Zombie extends WalkingMonster implements Ageable{
     }
 
     public function getDrops() : array{
-        $drops = [];
-        if($this->lastDamageCause instanceof EntityDamageByEntityEvent){
+        $drops = [
+            ItemFactory::get(Item::ROTTEN_FLESH, 0, \mt_rand(0, 2))
+        ];
+
+        if(\mt_rand(0, 199) < 5){
             switch(\mt_rand(0, 2)){
                 case 0:
-                    $drops[] = Item::get(Item::FEATHER, 0, 1);
+                    $drops[] = ItemFactory::get(Item::IRON_INGOT, 0, 1);
                     break;
                 case 1:
-                    $drops[] = Item::get(Item::CARROT, 0, 1);
+                    $drops[] = ItemFactory::get(Item::CARROT, 0, 1);
                     break;
                 case 2:
-                    $drops[] = Item::get(Item::POTATO, 0, 1);
+                    $drops[] = ItemFactory::get(Item::POTATO, 0, 1);
                     break;
             }
         }
+
         return $drops;
     }
+
 }

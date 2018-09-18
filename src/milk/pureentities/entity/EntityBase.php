@@ -10,10 +10,12 @@ use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\ByteTag;
+use pocketmine\nbt\tag\CompoundTag;
+use pocketmine\timings\Timings;
 
 abstract class EntityBase extends Creature{
 
-    protected $speed = 1;
+    private $speed = 1.0;
 
     protected $stayTime = 0;
     protected $moveTime = 0;
@@ -34,44 +36,43 @@ abstract class EntityBase extends Creature{
 
     public abstract function targetOption(Creature $creature, $distance);
 
-    public function getSaveId() : string{
-        $class = new \ReflectionClass(\get_class($this));
-        return $class->getShortName();
-    }
-
-    public function isMovement(){
+    public function isMovement() : bool{
         return $this->movement;
     }
 
-    public function isFriendly(){
+    public function isFriendly() : bool{
         return $this->friendly;
     }
 
-    public function isWallCheck(){
+    public function isWallCheck() : bool{
         return $this->wallcheck;
     }
 
-    public function setMovement($value){
-        $this->movement = (bool) $value;
+    public function setMovement(bool $value) : void{
+        $this->movement = $value;
     }
 
-    public function setFriendly($value){
-        $this->friendly = (bool) $value;
+    public function setFriendly(bool $value) : void{
+        $this->friendly = $value;
     }
 
-    public function setWallCheck($value){
-        $this->wallcheck = (bool) $value;
+    public function setWallCheck(bool $value) : void{
+        $this->wallcheck = $value;
     }
 
-    public function getSpeed(){
+    public function getSpeed() : float{
         return $this->speed;
     }
 
-    public function getTarget(){
+    public function setSpeed(float $speed) : void{
+        $this->speed = $speed;
+    }
+
+    public function getTarget() : ?Vector3{
         return $this->followTarget != null ? $this->followTarget : ($this->target instanceof Entity ? $this->target : null);
     }
 
-    public function setTarget(Entity $target){
+    public function setTarget(Entity $target) : void{
         $this->followTarget = $target;
         
         $this->moveTime = 0;
@@ -79,52 +80,57 @@ abstract class EntityBase extends Creature{
         $this->target = \null;
     }
     
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
-        if($this->namedtag->hasTag('Movement', ByteTag::class)){
-            $this->setMovement($this->namedtag->getByte('Movement'));
+        if($tag->hasTag('Movement', ByteTag::class)){
+            $this->setMovement($tag->getByte('Movement') !== 0);
         }
-        if($this->namedtag->hasTag('Friendly', ByteTag::class)){
-            $this->setFriendly($this->namedtag->getByte('Friendly'));
+        if($tag->hasTag('Friendly', ByteTag::class)){
+            $this->setFriendly($tag->getByte('Friendly') !== 0);
         }
-        if($this->namedtag->hasTag('WallCheck', ByteTag::class)){
-            $this->setWallCheck($this->namedtag->getByte('WallCheck'));
+        if($tag->hasTag('WallCheck', ByteTag::class)){
+            $this->setWallCheck($tag->getByte('WallCheck') !== 0);
         }
         $this->setImmobile(\true);
     }
 
-    public function saveNBT(){
-        parent::saveNBT();
-        $this->namedtag->setByte('Movement', $this->isMovement() ? 1 : 0);
-        $this->namedtag->setByte('Friendly', $this->isFriendly() ? 1 : 0);
-        $this->namedtag->setByte('WallCheck', $this->isWallCheck() ? 1 : 0);
+    public function saveNBT() : CompoundTag{
+        $nbt = parent::saveNBT();
+        $nbt->setByte('Movement', $this->isMovement() ? 1 : 0);
+        $nbt->setByte('Friendly', $this->isFriendly() ? 1 : 0);
+        $nbt->setByte('WallCheck', $this->isWallCheck() ? 1 : 0);
+
+        return $nbt;
     }
 
-    public function updateMovement(bool $teleport = \false){
-        if($this->lastX !== $this->x){
-            $this->lastX = $this->x;
+    public function updateMovement(bool $teleport = \false) : void{
+        $send = \false;
+        if(
+            $this->lastLocation->x !== $this->x
+            || $this->lastLocation->y !== $this->y
+            || $this->lastLocation->z !== $this->z
+            || $this->lastLocation->yaw !== $this->yaw
+            || $this->lastLocation->pitch !== $this->pitch
+        ){
+            $send = \true;
+            $this->lastLocation = $this->asLocation();
         }
 
-        if($this->lastY !== $this->y){
-            $this->lastY = $this->y;
+        if(
+            $this->lastMotion->x !== $this->motion->x
+            || $this->lastMotion->y !== $this->motion->y
+            || $this->lastMotion->z !== $this->motion->z
+        ){
+            $this->lastMotion = clone $this->motion;
         }
 
-        if($this->lastZ !== $this->z){
-            $this->lastZ = $this->z;
+        if($send){
+            $this->broadcastMovement($teleport);
         }
-
-        if($this->lastYaw !== $this->yaw){
-            $this->lastYaw = $this->yaw;
-        }
-
-        if($this->lastPitch !== $this->pitch){
-            $this->lastPitch = $this->pitch;
-        }
-        $this->broadcastMovement();
     }
 
-    public function attack(EntityDamageEvent $source){
+    public function attack(EntityDamageEvent $source) : void{
         if($this->attackTime > 0) return;
 
         parent::attack($source);
@@ -136,15 +142,14 @@ abstract class EntityBase extends Creature{
         $this->stayTime = 0;
         $this->moveTime = 0;
 
-        //TODO: FlyingEntity
+        //TODO: Implement FlyingEntity
         $damager = $source->getDamager();
         $motion = (new Vector3($this->x - $damager->x, $this->y - $damager->y, $this->z - $damager->z))->normalize();
-        $this->motionX = $motion->x * 0.19;
-        $this->motionY = 0.6;
-        $this->motionZ = $motion->z * 0.19;
+        $motion->y = 0.6;
+        $this->setMotion($motion);
     }
 
-    public function knockBack(Entity $attacker, float $damage, float $x, float $z, float $base = 0.4){
+    public function knockBack(Entity $attacker, float $damage, float $x, float $z, float $base = 0.4) : void{
 
     }
 
@@ -167,19 +172,33 @@ abstract class EntityBase extends Creature{
     }
 
     public function move(float $dx, float $dy, float $dz) : void{
+        $this->blocksAround = \null;
+
+        Timings::$entityMoveTimer->startTiming();
+
         $movX = $dx;
         $movY = $dy;
         $movZ = $dz;
 
-        $list = $this->level->getCollisionCubes($this, $this->level->getTickRate() > 1 ? $this->boundingBox->getOffsetBoundingBox($dx, $dy, $dz) : $this->boundingBox->addCoord($dx, $dy, $dz));
+        $list = $this->level->getCollisionCubes($this, $this->level->getTickRate() > 1 ? $this->boundingBox->offsetCopy($dx, $dy, $dz) : $this->boundingBox->addCoord($dx, $dy, $dz));
         foreach($list as $bb){
-            if($this->isWallCheck()){
-                $dx = $bb->calculateXOffset($this->boundingBox, $dx);
-                $dz = $bb->calculateZOffset($this->boundingBox, $dz);
-            }
             $dy = $bb->calculateYOffset($this->boundingBox, $dy);
         }
-        $this->boundingBox->offset($dx, $dy, $dz);
+        $this->boundingBox->offset(0, $dy, 0);
+
+        if($this->isWallCheck()){
+            foreach($list as $bb){
+                $dx = $bb->calculateXOffset($this->boundingBox, $dx);
+            }
+            $this->boundingBox->offset($dx, 0, 0);
+
+            foreach($list as $bb){
+                $dz = $bb->calculateZOffset($this->boundingBox, $dz);
+            }
+            $this->boundingBox->offset(0, 0, $dz);
+        }else{
+            $this->boundingBox->offset($dx, 0, $dz);
+        }
 
         $this->x += $dx;
         $this->y += $dy;
@@ -189,6 +208,8 @@ abstract class EntityBase extends Creature{
         $this->checkBlockCollision();
         $this->checkGroundState($movX, $movY, $movZ, $dx, $dy, $dz);
         $this->updateFallState($dy, $this->onGround);
+
+        Timings::$entityMoveTimer->stopTiming();
     }
 
 }

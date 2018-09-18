@@ -19,8 +19,8 @@ class Pig extends WalkingAnimal implements Rideable{
         return 'Pig';
     }
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->setMaxHealth(10);
     }

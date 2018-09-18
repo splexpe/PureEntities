@@ -22,8 +22,8 @@ class SnowGolem extends WalkingMonster implements ProjectileSource{
     public $width = 0.6;
     public $height = 1.8;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->setFriendly(\true);
     }

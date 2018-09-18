@@ -17,8 +17,8 @@ class Wolf extends WalkingMonster{
     public $width = 0.72;
     public $height = 0.9;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 1.2;
         if($this->namedtag->hasTag('Angry', IntTag::class)){

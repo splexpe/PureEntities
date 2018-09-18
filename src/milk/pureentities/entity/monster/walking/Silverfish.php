@@ -13,8 +13,8 @@ class Silverfish extends WalkingMonster{
     public $width = 0.4;
     public $height = 0.2;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->speed = 1.4;
         $this->setMaxDamage(8);

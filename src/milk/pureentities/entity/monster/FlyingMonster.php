@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace milk\pureentities\entity\monster;
 
 use milk\pureentities\entity\FlyingEntity;
@@ -18,72 +20,69 @@ abstract class FlyingMonster extends FlyingEntity implements Monster{
 
     public abstract function attackEntity(Entity $player);
 
-    public function getDamage(int $difficulty = null) : float{
-        return \mt_rand($this->getMinDamage($difficulty), $this->getMaxDamage($difficulty));
+    public function getDamages(int $difficulty = -1) : array{
+        return [$this->getMinDamage($difficulty), $this->getMaxDamage($difficulty)];
     }
 
-    public function getMinDamage(int $difficulty = null) : float{
-        if($difficulty === null || $difficulty > 3 || $difficulty < 0){
-            $difficulty = Server::getInstance()->getDifficulty();
-        }
-        return $this->minDamage[$difficulty];
+    public function getResultDamage(int $difficulty = -1) : int{
+        return \mt_rand(...$this->getDamages($difficulty));// + $this->inventory->getItemInHand()->getAttackPoints();
     }
 
-    public function getMaxDamage(int $difficulty = null) : float{
-        if($difficulty === null || $difficulty > 3 || $difficulty < 0){
-            $difficulty = Server::getInstance()->getDifficulty();
-        }
-        return $this->maxDamage[$difficulty];
-    }
-
-    /**
-     * @param float|float[] $damage
-     * @param int $difficulty
-     */
-    public function setDamage($damage, int $difficulty = null){
-        if(is_array($damage)){
-            for($i = 0; $i < 4; $i++){
-                $this->minDamage[$i] = $damage[$i];
-                $this->maxDamage[$i] = $damage[$i];
-            }
-            return;
-        }elseif($difficulty === null){
+    public function getMinDamage(int $difficulty = -1) : int{
+        if($difficulty > 3 || $difficulty < 0){
             $difficulty = Server::getInstance()->getDifficulty();
         }
 
-        if($difficulty >= 1 && $difficulty <= 3){
-            $this->minDamage[$difficulty] = $damage[$difficulty];
-            $this->maxDamage[$difficulty] = $damage[$difficulty];
-        }
+        return \min($this->minDamage[$difficulty], $this->maxDamage[$difficulty]);
     }
 
-    public function setMinDamage($damage, int $difficulty = null){
-        if(is_array($damage)){
-            for($i = 0; $i < 4; $i++){
-                $this->minDamage[$i] = min($damage[$i], $this->getMaxDamage($i));
-            }
-            return;
-        }elseif($difficulty === null){
+    public function getMaxDamage(int $difficulty = -1) : int{
+        if($difficulty > 3 || $difficulty < 0){
             $difficulty = Server::getInstance()->getDifficulty();
         }
 
-        if($difficulty >= 1 && $difficulty <= 3){
-            $this->minDamage[$difficulty] = min((float) $damage, $this->getMaxDamage($difficulty));
-        }
+        return \max($this->minDamage[$difficulty], $this->maxDamage[$difficulty]);
     }
 
-    public function setMaxDamage($damage, int $difficulty = null){
-        if(is_array($damage)){
-            for($i = 0; $i < 4; $i++){
-                $this->maxDamage[$i] = max((int) $damage[$i], $this->getMaxDamage($i));
-            }
-            return;
-        }elseif($difficulty === null){
+    public function setMinDamage(int $damage, int $difficulty = -1) : void{
+        if($difficulty > 3 || $difficulty < 0){
             $difficulty = Server::getInstance()->getDifficulty();
         }
 
-        if($difficulty >= 1 && $difficulty <= 3){
-            $this->maxDamage[$difficulty] = max((int) $damage, $this->getMaxDamage($difficulty));
+        $this->minDamage[$difficulty] = $damage;
+    }
+
+    public function setMaxDamage(int $damage, int $difficulty = -1) : void{
+        if($difficulty === \null || $difficulty < 1 || $difficulty > 3){
+            $difficulty = Server::getInstance()->getDifficulty();
+        }
+
+        $this->maxDamage[$difficulty] = $damage;
+    }
+
+    public function setDamage(int $damage, int $difficulty = -1) : void{
+        if($difficulty === \null || $difficulty > 3 || $difficulty < 0){
+            $difficulty = Server::getInstance()->getDifficulty();
+        }
+
+        $this->setMinDamage($damage, $difficulty);
+        $this->setMaxDamage($damage, $difficulty);
+    }
+
+    public function setDamages(array $damages) : void{
+        $this->setMinDamages($damages);
+        $this->setMaxDamages($damages);
+    }
+
+    public function setMinDamages(array $damages) : void{
+        if(count($damages) > 3) for ($i = 0; $i < 4; $i++) {
+            $this->setMinDamage((int) $damages[$i], $i);
+        }
+    }
+
+    public function setMaxDamages(array $damages) : void{
+        if(count($damages) > 3) for ($i = 0; $i < 4; $i++) {
+            $this->setMaxDamage((int) $damages[$i], $i);
         }
     }
 

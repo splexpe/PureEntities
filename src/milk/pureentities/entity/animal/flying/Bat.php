@@ -16,8 +16,8 @@ class Bat extends FlyingAnimal{
         return 'Bat';
     }
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->setMaxHealth(6);
     }

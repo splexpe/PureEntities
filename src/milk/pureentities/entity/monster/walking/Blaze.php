@@ -27,8 +27,8 @@ class Blaze extends WalkingMonster implements ProjectileSource{
     public $height = 1.8;
     public $gravity = 0.04;
 
-    public function initEntity(){
-        parent::initEntity();
+    public function initEntity(CompoundTag $tag) : void{
+        parent::initEntity($tag);
 
         $this->setDamage([0, 0, 0, 0]);
     }
@@ -95,8 +95,8 @@ class Blaze extends WalkingMonster implements ProjectileSource{
         }
 
         if($this->attackTime > 0){
-            $this->move($this->motionX * $tickDiff, $this->motionY, $this->motionZ * $tickDiff);
-            $this->motionY -= 0.2 * $tickDiff;
+            $this->move($this->motion->x * $tickDiff, $this->motion->y, $this->motion->z * $tickDiff);
+            $this->motion->y -= 0.2 * $tickDiff;
             $this->updateMovement();
             return null;
         }
@@ -108,11 +108,11 @@ class Blaze extends WalkingMonster implements ProjectileSource{
 
             $diff = \abs($x) + \abs($z);
             if($x ** 2 + $z ** 2 < 0.7){
-                $this->motionX = 0;
-                $this->motionZ = 0;
+                $this->motion->x = 0;
+                $this->motion->z = 0;
             }else{
-                $this->motionX = $this->getSpeed() * 0.15 * ($x / $diff);
-                $this->motionZ = $this->getSpeed() * 0.15 * ($z / $diff);
+                $this->motion->x = $this->getSpeed() * 0.15 * ($x / $diff);
+                $this->motion->z = $this->getSpeed() * 0.15 * ($z / $diff);
             }
             $this->yaw = \rad2deg(-\atan2($x / $diff, $z / $diff));
             $this->pitch = $y === 0 ? 0 : \rad2deg(-\atan2($y, \sqrt($x ** 2 + $z ** 2)));
@@ -127,36 +127,36 @@ class Blaze extends WalkingMonster implements ProjectileSource{
 
             $diff = \abs($x) + \abs($z);
             if($x ** 2 + $z ** 2 < 0.7){
-                $this->motionX = 0;
-                $this->motionZ = 0;
+                $this->motion->x = 0;
+                $this->motion->z = 0;
             }else{
                 if($this->target instanceof Creature){
-                    $this->motionX = 0;
-                    $this->motionZ = 0;
+                    $this->motion->x = 0;
+                    $this->motion->z = 0;
                     $height = $this->y - $this->getLevel()->getHighestBlockAt((int) $this->x, (int) $this->z);
                     if($height < 8){
-                        $this->motionY = $this->gravity;
+                        $this->motion->y = $this->gravity;
                     }elseif((int) $height === 8){
-                        $this->motionY = 0;
+                        $this->motion->y = 0;
                     }
                 }else{
-                    $this->motionX = $this->getSpeed() * 0.15 * ($x / $diff);
-                    $this->motionZ = $this->getSpeed() * 0.15 * ($z / $diff);
+                    $this->motion->x = $this->getSpeed() * 0.15 * ($x / $diff);
+                    $this->motion->z = $this->getSpeed() * 0.15 * ($z / $diff);
                 }
             }
             $this->yaw = \rad2deg(-\atan2($x / $diff, $z / $diff));
             $this->pitch = $y === 0 ? 0 : \rad2deg(-\atan2($y, \sqrt($x ** 2 + $z ** 2)));
         }
 
-        $dx = $this->motionX * $tickDiff;
-        $dz = $this->motionZ * $tickDiff;
+        $dx = $this->motion->x * $tickDiff;
+        $dz = $this->motion->z * $tickDiff;
         $isJump = $this->checkJump($tickDiff, $dx, $dz);
         if($this->stayTime > 0){
             $this->stayTime -= $tickDiff;
-            $this->move(0, $this->motionY * $tickDiff, 0);
+            $this->move(0, $this->motion->y * $tickDiff, 0);
         }else{
             $be = new Vector2($this->x + $dx, $this->z + $dz);
-            $this->move($dx, $this->motionY * $tickDiff, $dz);
+            $this->move($dx, $this->motion->y * $tickDiff, $dz);
             $af = new Vector2($this->x, $this->z);
 
             if(($be->x !== $af->x || $be->y !== $af->y) && !$isJump){
@@ -166,9 +166,9 @@ class Blaze extends WalkingMonster implements ProjectileSource{
 
         if(!$isJump){
             if($this->onGround){
-                $this->motionY = 0;
+                $this->motion->y = 0;
             }else{
-                $this->motionY = -$this->gravity;
+                $this->motion->y = -$this->gravity;
             }
         }
         $this->updateMovement();
