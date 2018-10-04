@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace milk\pureentities\entity\monster\walking;
 
 use milk\pureentities\entity\monster\WalkingMonster;
@@ -13,6 +15,7 @@ use pocketmine\math\Math;
 use pocketmine\math\Vector2;
 use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\ByteTag;
+use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\event\entity\EntityDamageByEntityEvent;
 use pocketmine\item\Item;
@@ -29,37 +32,33 @@ class Creeper extends WalkingMonster implements Explosive{
     public function initEntity(CompoundTag $tag) : void{
         parent::initEntity($tag);
 
-        $this->speed = 0.9;
-        if($this->namedtag->hasTag('IsPowered', ByteTag::class)){
-            $this->setGenericFlag(self::DATA_POWERED, $this->namedtag->getByte('IsPowered'));
-        }elseif($this->namedtag->hasTag('powered', ByteTag::class)){
-            $this->setGenericFlag(self::DATA_POWERED, $this->namedtag->getByte('powered'));
-        }
-
-        if($this->namedtag->hasTag('BombTime', IntTag::class)){
-            $this->bombTime = $this->namedtag->getInt('BombTime');
+        $this->setSpeed(0.9);
+        $this->setGenericFlag(self::DATA_POWERED, $tag->getByte('IsPowered', 0) !== 0 || $tag->getByte('powered') !== 0);
+        if($tag->hasTag('BombTime', IntTag::class)){
+            $this->bombTime = $tag->getInt('BombTime');
         }
     }
 
-    public function isPowered(){
+    public function isPowered() : bool{
         return $this->getGenericFlag(self::DATA_POWERED);
     }
 
-    public function setPowered($value = \true){
-        $this->namedtag->setByte('powered', $value ? 1 : 0);
-        $this->setGenericFlag(self::DATA_POWERED, $value ? 1 : 0);
+    public function setPowered(bool $value = \true){
+        $this->setGenericFlag(self::DATA_POWERED, $value);
     }
 
-    public function saveNBT(){
-        parent::saveNBT();
-        $this->namedtag->setInt('BombTime', $this->bombTime);
+    public function saveNBT() : CompoundTag{
+        $nbt = parent::saveNBT();
+        $nbt->setInt('BombTime', $this->bombTime);
+        $nbt->setByte('powered', $this->getGenericFlag(self::DATA_POWERED) ? 1 : 0);
+        return $nbt;
     }
 
     public function getName() : string{
         return 'Creeper';
     }
 
-    public function explode(){
+    public function explode() : void{
         $this->server->getPluginManager()->callEvent($ev = new ExplosionPrimeEvent($this, 2.8));
 
         if(!$ev->isCancelled()){
